@@ -4,7 +4,10 @@ variable "yandex_zone" {
   default = "ru-central1-a"
 }
 
-
+variable "ssh_public_key" {
+  description = "SSH public key for user art"
+  type        = string
+}
 
 
 # variable "vm_count" {

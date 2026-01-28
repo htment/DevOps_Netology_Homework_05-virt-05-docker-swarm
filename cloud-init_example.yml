@@ -4,7 +4,7 @@ users:
     shell: /bin/bash
     sudo: ['ALL=(ALL) NOPASSWD:ALL']
     ssh_authorized_keys:
-      - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJbq9DwdMFOi0n4bceuSW/2yO6nPKoV41TsIAaCxkxu3 art@debian-sb
+      - ssh-ed25519 dddddddddddddddddddddddddddddddddddddddddddd art@debian-sb
 
   - name: admin
     groups: sudo

@@ -12,7 +12,7 @@ resource "yandex_vpc_subnet" "swarm-subnet" {
 }
 
 resource "yandex_compute_instance" "swarm-node" {
-  count = 3
+  count = 2
   
   name        = "swarm-node-${count.index}"
   hostname    = "swarm-node-${count.index}"
@@ -43,7 +43,7 @@ resource "yandex_compute_instance" "swarm-node" {
 
 # Настроим подключение по ssh
   metadata = {
-    ssh-keys = "art:${file("~/.ssh/id_rsa.pub")}"
+   # ssh-keys = "art:${file("~/.ssh/id_ed25519.pub")}"
     user-data          = file("./cloud-init.yml")
   }
   

@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  docker-in-docker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: dind-container
+    privileged: true
+    ports:
+      - "2223:22"
+      - "2375:2375"
+      - "2376:2376"
+    volumes:
+      - docker-data:/var/lib/docker
+    environment:
+      - DOCKER_TLS_CERTDIR=
+    restart: unless-stopped
+
+volumes:
+  docker-data:
+    driver: local

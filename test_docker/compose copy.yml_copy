@@ -1,0 +1,59 @@
+version: '3.8'
+
+networks:
+  my-network:
+    name: host-bridge
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/24
+          gateway: 172.22.0.1
+
+services:
+  test-debian0:
+    image: docker:dind  # Используем DinD образ
+    container_name: debian-ssh-container0
+    hostname: container-debian-test0
+    privileged: true
+    command: ["dockerd", "--host", "tcp://0.0.0.0:2375", "--host", "unix:///var/run/docker.sock"]
+    environment:
+      - DOCKER_TLS_CERTDIR=
+    ports:
+      - "2220:22"
+      - "23750:2375"  # Docker API порт
+    networks:
+      my-network:
+        ipv4_address: 172.22.0.100
+    restart: unless-stopped
+
+  test-debian1:
+    image: docker:dind
+    container_name: debian-ssh-container1
+    hostname: container-debian-test1
+    privileged: true
+    command: ["dockerd", "--host", "tcp://0.0.0.0:2375", "--host", "unix:///var/run/docker.sock"]
+    environment:
+      - DOCKER_TLS_CERTDIR=
+    ports:
+      - "2221:22"
+      - "23751:2375"
+    networks:
+      my-network:
+        ipv4_address: 172.22.0.101
+    restart: unless-stopped
+
+  test-debian2:
+    image: docker:dind
+    container_name: debian-ssh-container2
+    hostname: container-debian-test2
+    privileged: true
+    command: ["dockerd", "--host", "tcp://0.0.0.0:2375", "--host", "unix:///var/run/docker.sock"]
+    environment:
+      - DOCKER_TLS_CERTDIR=
+    ports:
+      - "2222:22"
+      - "23752:2375"
+    networks:
+      my-network:
+        ipv4_address: 172.22.0.102
+    restart: unless-stopped

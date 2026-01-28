@@ -1,0 +1,126 @@
+---
+- hosts: all
+  gather_facts: no
+  tasks:
+    # Установка Python и необходимых пакетов
+    - name: Установка Python3 и необходимых пакетов
+      become: yes
+      raw: apt-get update && apt-get install -y python3 python3-apt
+    
+    # Сбор фактов после установки Python
+    - name: Сбор фактов системы
+      setup:
+    
+    # Установка системных пакетов
+    - name: Установка системных пакетов
+      become: yes
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+        update_cache: yes
+    
+    # Создание директории для GPG ключа Docker
+    - name: Создание директории для GPG ключа Docker
+      become: yes
+      file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+    
+    # Определение дистрибутива ОС
+    - name: Определение дистрибутива ОС
+      shell: cat /etc/os-release | grep "^ID=" | cut -d'=' -f2 | tr -d '"'
+      register: os_distribution
+      changed_when: false
+    
+    # Определение кодового имени ОС
+    - name: Определение кодового имени ОС
+      shell: lsb_release -cs
+      register: os_codename
+      changed_when: false
+    
+    # Определение архитектуры системы
+    - name: Определение архитектуры системы
+      shell: dpkg --print-architecture
+      register: system_arch
+      changed_when: false
+    
+    # Загрузка GPG ключа Docker
+    - name: Загрузка GPG ключа Docker
+      become: yes
+      shell: |
+        curl -fsSL https://download.docker.com/linux/{{ os_distribution.stdout }}/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+        chmod a+r /etc/apt/keyrings/docker.gpg
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+    
+    # Добавление репозитория Docker
+    - name: Добавление репозитория Docker
+      become: yes
+      apt_repository:
+        repo: "deb [arch={{ system_arch.stdout }} signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/{{ os_distribution.stdout }} {{ os_codename.stdout }} stable"
+        state: present
+        filename: docker
+        update_cache: yes
+    
+    # Установка пакетов Docker
+    - name: Установка пакетов Docker
+      become: yes
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+    
+    # Проверка работы systemd
+    - name: Проверка работы systemd
+      shell: systemctl is-system-running
+      register: systemd_check
+      failed_when: false
+      changed_when: false
+    
+    # Запуск и включение службы Docker (systemd)
+    - name: Запуск и включение службы Docker (systemd)
+      become: yes
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+      when: systemd_check.stdout in ["running", "degraded"]
+    
+    # Запуск службы Docker (без systemd)
+    - name: Запуск службы Docker (без systemd)
+      become: yes
+      shell: service docker start || /etc/init.d/docker start || dockerd &
+      when: systemd_check.stdout not in ["running", "degraded"]
+      ignore_errors: yes
+      async: 10
+      poll: 0
+    
+    # Добавление пользователя в группу docker
+    - name: Добавление пользователя в группу docker
+      become: yes
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+    
+    # Проверка установки Docker
+    - name: Проверка установки Docker
+      command: docker --version
+      register: docker_version
+      changed_when: false
+    
+    # Вывод версии Docker
+    - name: Отображение версии Docker
+      debug:
+        msg: "Docker установлен успешно: {{ docker_version.stdout }}"

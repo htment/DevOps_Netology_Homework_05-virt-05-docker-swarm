@@ -1,0 +1,71 @@
+version: '3.8'
+
+networks:
+  swarm-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/24
+          gateway: 172.22.0.1
+
+services:
+  # Нода 1 - Manager
+  swarm-node1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: swarm-node1
+    hostname: swarm-node1
+    privileged: true
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
+      - net.ipv6.conf.default.disable_ipv6=1
+    ports:
+      - "2220:22"
+      - "12377:2377"
+      - "17946:7946"
+      - "14789:4789/udp"
+    networks:
+      swarm-network:
+        ipv4_address: 172.22.0.100
+    restart: unless-stopped
+
+  # Нода 2 - Worker
+  swarm-node2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: swarm-node2
+    hostname: swarm-node2
+    privileged: true
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
+      - net.ipv6.conf.default.disable_ipv6=1
+    ports:
+      - "2221:22"
+      - "17947:7946"
+      - "14790:4789/udp"
+    networks:
+      swarm-network:
+        ipv4_address: 172.22.0.101
+    restart: unless-stopped
+
+  # Нода 3 - Worker
+  swarm-node3:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: swarm-node3
+    hostname: swarm-node3
+    privileged: true
+    sysctls:
+      - net.ipv6.conf.all.disable_ipv6=1
+      - net.ipv6.conf.default.disable_ipv6=1
+    ports:
+      - "2222:22"
+      - "17948:7946"
+      - "14791:4789/udp"
+    networks:
+      swarm-network:
+        ipv4_address: 172.22.0.102
+    restart: unless-stopped

@@ -1,0 +1,45 @@
+FROM debian:latest
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    gnupg \
+    lsb-release \
+    openssh-server \
+    sudo \
+    iproute2 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Установка Docker официальным способом
+RUN install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc \
+    && chmod a+r /etc/apt/keyrings/docker.asc \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    docker-ce \
+    docker-ce-cli \
+    containerd.io \
+    docker-buildx-plugin \
+    docker-compose-plugin \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Настройка пользователя art
+RUN useradd -m -s /bin/bash art \
+    && echo "art:123" | chpasswd \
+    && usermod -aG docker art \
+    && usermod -aG sudo art \
+    && echo "art ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/art
+
+# Настройка SSH
+RUN mkdir -p /home/art/.ssh \
+    && chown art:art /home/art/.ssh \
+    && chmod 700 /home/art/.ssh \
+    && echo "PasswordAuthentication yes" >> /etc/ssh/sshd_config \
+    && echo "PermitRootLogin no" >> /etc/ssh/sshd_config \
+    && mkdir -p /var/run/sshd
+
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]

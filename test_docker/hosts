@@ -1,0 +1,5 @@
+[docker_hosts]
+dind-container ansible_host=localhost ansible_port=2222 ansible_user=art ansible_password=123 ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[docker_hosts:vars]
+ansible_python_interpreter=/usr/bin/python3

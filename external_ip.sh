@@ -44,6 +44,7 @@ for IP in $IP_LIST; do
     
     ((INDEX++))
 done
+echo "export INDEX=$INDEX" >> ip_env
 
 echo "Всего нод: $INDEX"
 
@@ -58,3 +59,4 @@ for ((NumNode=0; NumNode<INDEX; NumNode++)); do
     # Используем индирекцию для получения значения
     echo "IP_SWARM_NODE_$NumNode = ${!var_name}"
 done
+

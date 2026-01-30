@@ -1,0 +1,22 @@
+---
+- name: Создаём папку для проекта
+  file:
+    path: /app
+    state: directory
+    mode: '0755'
+
+- name: Копирование проекта
+  copy:
+    src: "/home/art/DevOps_Homework/05-virt-04-docker-in-practice/shvirtd-example-python/"
+    dest: /app
+    owner: art
+    group: art
+
+- name: Проверка содержимого папки
+  command: ls -la /app
+  register: ls_result
+  changed_when: false
+
+- name: Вывод результата
+  debug:
+    var: ls_result.stdout_lines

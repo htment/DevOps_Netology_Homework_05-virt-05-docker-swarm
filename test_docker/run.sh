@@ -94,3 +94,8 @@ else
     echo "Проверьте логи: docker logs dind-container"
     exit 1
 fi
+export HOST_SSH_PUBKEY=$(cat ~/.ssh/id_ed25519.pub )
+echo "HOST_SSH_PUBKEY=$(cat ~/.ssh/id_ed25519.pub)" > .env
+echo "Host 172.22.0.*
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null" >> ~/.ssh/config

@@ -1,0 +1,89 @@
+1. Сначала инициализируйте Swarm (на первой ноде):
+bash
+docker swarm init --advertise-addr <IP-адрес-менеджера>
+2. Добавьте рабочие ноды (выполните на рабочих нодах):
+Команду для присоединения вы увидите после инициализации, выглядит примерно так:
+
+bash
+docker swarm join --token SWMTKN-1-... <manager-ip>:2377
+3. Проверьте, что все ноды в Swarm:
+bash
+docker node ls
+4. Создайте сеть overlay:
+bash
+docker network create --driver overlay nginx-net
+5. Запустите nginx сервис:
+bash
+docker service create \
+  --name nginx \
+  --replicas 3 \
+  --publish published=80,target=80 \
+  --network nginx-net \
+  nginx:alpine
+Альтернативные варианты:
+С явным распределением по нодам (global mode):
+bash
+docker service create \
+  --name nginx \
+  --mode global \
+  --publish published=80,target=80 \
+  nginx:alpine
+С дополнительными параметрами:
+bash
+docker service create \
+  --name nginx \
+  --replicas 3 \
+  --publish published=80,target=80,mode=host \
+  --constraint 'node.role==worker' \
+  --update-delay 10s \
+  --update-parallelism 1 \
+  --restart-condition any \
+  nginx:alpine
+Проверка статуса:
+bash
+# Просмотр всех сервисов
+docker service ls
+
+# Детальная информация о сервисе nginx
+docker service ps nginx
+
+# Логи сервиса
+docker service logs nginx
+Масштабирование (если нужно изменить количество реплик):
+bash
+docker service scale nginx=5
+С конфигурацией через docker-compose.yml:
+Создайте файл docker-compose.yml:
+
+yaml
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    networks:
+      - nginx-net
+    deploy:
+      replicas: 3
+      placement:
+        constraints:
+          - node.role==worker
+
+networks:
+  nginx-net:
+    driver: overlay
+Затем разверните:
+
+bash
+docker stack deploy -c docker-compose.yml nginx-stack
+Ключевые моменты:
+
+--replicas 3 создаст 3 контейнера nginx
+
+Docker Swarm автоматически распределит их по доступным нодам
+
+Traffic будет балансироваться между всеми репликами
+
+Сервис будет автоматически перезапускаться при падении

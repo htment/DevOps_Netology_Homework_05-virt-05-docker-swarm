@@ -1,8 +1,8 @@
 
+# Попрробуем  docker in docker
+[DInD](test_docker/README.md)
 
-
-
-## Установим terraform и ansible
+# Установим terraform и ansible
 ```
 apt get install ansible
 ```
@@ -80,3 +80,34 @@ variable "yandex_zone" {
 terraform init
 ```
 ![alt text](image-2.png)
+
+##  Создадим cloud-init.yml для создания пользователей на ВМ 
+```
+users:
+  - name: art
+    groups: sudo
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    ssh_authorized_keys:
+      - ssh-ed25519 ваш ключ
+
+  - name: admin
+    groups: sudo
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    lock_passwd: false
+    passwd: "$6$rounds=4096$wPs2z7VqC9$X6q5h7W8pY2rT3sV1qZ9mN0bC4dF7gH2jK5lP8oR6tS9uY4vAxE3zB1cM6nDf" # зашифрованый пароль 1-6 (так лучше не делать, это только в учебных целях)
+
+ssh_pwauth: true
+disable_root: false
+chpasswd:
+  list: |
+    admin:123456
+  expire: false
+```
+
+
+
+
+
+

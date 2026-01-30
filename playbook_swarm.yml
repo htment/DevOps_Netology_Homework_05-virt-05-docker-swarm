@@ -1,0 +1,78 @@
+---
+- name: Setup Docker Swarm from scratch
+  hosts: all
+  become: yes
+  vars_files:
+    - .env.yml
+
+  tasks:
+    - name: Check if Docker daemon is running
+      command: docker info
+      register: docker_check
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Leave swarm if already a member
+      command: docker swarm leave --force
+      when: docker_check.rc == 0
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Initialize swarm on manager
+      command: docker swarm init --advertise-addr {{ swarm_manager_ip }}
+      when: ansible_default_ipv4.address == swarm_manager_ip
+      register: swarm_init
+
+    - name: Get worker join token
+      command: docker swarm join-token worker -q
+      when: ansible_default_ipv4.address == swarm_manager_ip
+      register: join_token
+      run_once: yes
+      delegate_to: "{{ swarm_manager_ip }}"
+
+    - name: Join workers to swarm
+      command: docker swarm join --token {{ hostvars[swarm_manager_ip]['join_token']['stdout'] }} {{ swarm_manager_ip }}:2377
+      when: ansible_default_ipv4.address != swarm_manager_ip
+
+    - name: Verify swarm status on manager
+      command: docker node ls
+      when: ansible_default_ipv4.address == swarm_manager_ip
+      register: node_list
+      run_once: yes
+
+    - name: Display swarm nodes
+      debug:
+        var: node_list.stdout_lines
+      when: node_list is defined
+
+- name: Copy project
+  hosts: swarm_manager
+  become: yes
+  roles:
+    - copy_project
+
+
+
+
+
+- name: Deploy application to swarm
+  hosts: swarm_manager
+  become: yes
+  tasks:
+    - name: Build Docker image
+      command: docker build -t shvirtd-app:latest -f /app/Dockerfile /app
+      args:
+        chdir: /app
+
+    - name: Deploy stack to swarm
+      command: docker stack deploy -c /app/stack.yaml shvirtd-app
+      args:
+        chdir: /app
+      
+    - name: Check services status
+      command: docker service ls
+      register: service_status
+      
+    - name: Display services
+      debug:
+        var: service_status.stdout_lines

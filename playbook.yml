@@ -1,0 +1,41 @@
+---
+- name: Install Docker everywhere
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Install curl
+      package:
+        name: curl
+        state: present
+
+    - name: Install Docker using official script
+      shell: |
+        curl -fsSL https://get.docker.com -o get-docker.sh
+        sh get-docker.sh
+        rm get-docker.sh
+      args:
+        creates: /usr/bin/docker
+
+    - name: Start Docker (try different methods)
+      block:
+        - name: Try systemd
+          systemd:
+            name: docker
+            state: started
+          ignore_errors: yes
+
+        - name: Try service
+          service:
+            name: docker
+            state: started
+          ignore_errors: yes
+
+        - name: Start manually as fallback
+          shell: |
+            if command -v dockerd > /dev/null && [ ! -S /var/run/docker.sock ]; then
+              dockerd > /dev/null 2>&1 &
+              sleep 3
+            fi
+          args:
+            creates: /var/run/docker.sock

@@ -25,7 +25,9 @@ services:
       - "12377:2377"
       - "17946:7946"
       - "14789:4789/udp"
-    networks:
+    environment:
+      - HOST_SSH_PUBKEY=${HOST_SSH_PUBKEY}
+    networks:  
       swarm-network:
         ipv4_address: 172.22.0.100
     restart: unless-stopped
@@ -45,6 +47,8 @@ services:
       - "2221:22"
       - "17947:7946"
       - "14790:4789/udp"
+    environment:
+      - HOST_SSH_PUBKEY=${HOST_SSH_PUBKEY}
     networks:
       swarm-network:
         ipv4_address: 172.22.0.101
@@ -65,6 +69,8 @@ services:
       - "2222:22"
       - "17948:7946"
       - "14791:4789/udp"
+    environment:
+      - HOST_SSH_PUBKEY=${HOST_SSH_PUBKEY}
     networks:
       swarm-network:
         ipv4_address: 172.22.0.102

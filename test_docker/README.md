@@ -197,7 +197,11 @@ docker exec swarm-node1 docker node ls
 2. **Проблемы с правами**: Контейнер должен запускаться в privileged режиме
 3. **Проблемы с Ansible**: Playbook предназначен для Ubuntu, не для Alpine
 4. **Очистка при ошибках**:
+
+
+
    ```bash
+   echo "HOST_SSH_PUBKEY=$(cat ~/.ssh/id_ed25519.pub)" > .env
    docker compose -f docker-compose.yml down -v
    docker compose -f compose.yml down -v
    ```

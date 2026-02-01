@@ -4,7 +4,7 @@ echo "запускаем проект"
 echo "запускаем terrafom ...  и создаем ВМ"
 /usr/local/bin/terraform apply -auto-approve
 echo "обрабатываем адреса........."
-Создаем "конфигаруционыe файлы ......."
+echo Создаем "конфигаруционыe файлы ......."
 bash external_ip.sh
 bash external_hosts.sh
 bash make_env.yml.sh

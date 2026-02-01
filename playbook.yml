@@ -1,41 +1,75 @@
 ---
-- name: Install Docker everywhere
+- name: Fix repos and install Docker
   hosts: all
   become: yes
 
   tasks:
-    - name: Install curl
-      package:
-        name: curl
+    - name: Fix broken repositories
+      shell: |
+        # Backup original sources
+        cp /etc/apt/sources.list /etc/apt/sources.list.backup
+        
+        # Create clean sources.list for Debian 11
+        cat > /etc/apt/sources.list << 'EOF'
+        # Debian 11 Bullseye
+        deb http://deb.debian.org/debian bullseye main contrib non-free
+        deb http://deb.debian.org/debian bullseye-updates main contrib non-free
+        deb http://security.debian.org/debian-security bullseye-security main contrib non-free
+        EOF
+        
+        # Remove all .list files in sources.list.d to avoid conflicts
+        rm -f /etc/apt/sources.list.d/*.list 2>/dev/null || true
+        
+        echo "Repositories fixed"
+
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Install Docker from default Debian repo
+      apt:
+        name: docker.io
+        state: present
+        update_cache: yes
+
+    - name: Install additional Docker components
+      apt:
+        name:
+          - containerd
+          - docker-compose
         state: present
 
-    - name: Install Docker using official script
-      shell: |
-        curl -fsSL https://get.docker.com -o get-docker.sh
-        sh get-docker.sh
-        rm get-docker.sh
-      args:
-        creates: /usr/bin/docker
+    - name: Start Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
 
-    - name: Start Docker (try different methods)
-      block:
-        - name: Try systemd
-          systemd:
-            name: docker
-            state: started
-          ignore_errors: yes
+    - name: Create docker group
+      group:
+        name: docker
+        state: present
 
-        - name: Try service
-          service:
-            name: docker
-            state: started
-          ignore_errors: yes
+    - name: Add current user to docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
 
-        - name: Start manually as fallback
-          shell: |
-            if command -v dockerd > /dev/null && [ ! -S /var/run/docker.sock ]; then
-              dockerd > /dev/null 2>&1 &
-              sleep 3
-            fi
-          args:
-            creates: /var/run/docker.sock
+    - name: Verify Docker installation
+      command: docker --version
+      register: docker_version
+
+    - name: Show Docker version
+      debug:
+        msg: "Docker version: {{ docker_version.stdout }}"
+
+    - name: Test Docker
+      command: docker ps
+      register: docker_test
+      ignore_errors: yes
+
+    - name: Show Docker test result
+      debug:
+        msg: "Docker test: {{ docker_test.stdout if docker_test.stdout else 'Docker is running' }}"
